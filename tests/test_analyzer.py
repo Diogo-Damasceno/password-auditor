@@ -45,7 +45,7 @@ def test_shannon_entropy_zero_for_empty():
 
 def test_reuse_detection():
     res = audit_password("hunter2", others=["hunter2", "outra"])
-    assert res.reused_with  # detectou reuso
+    assert res.reused_with
 
 
 def test_crack_times_present():

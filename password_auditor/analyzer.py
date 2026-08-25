@@ -8,15 +8,15 @@ import re
 from dataclasses import dataclass, field
 from typing import Iterable
 
-# Conjuntos de caracteres usados para estimar o espaço de busca.
+
 _CHARSETS = [
     (r"[a-z]", 26),
     (r"[A-Z]", 26),
     (r"[0-9]", 10),
-    (r"[^a-zA-Z0-9]", 33),  # símbolos imprimíveis comuns
+    (r"[^a-zA-Z0-9]", 33),
 ]
 
-# Senhas mais comuns (amostra do rockyou top). Em produção, carregue de arquivo.
+
 _COMMON = {
     "123456", "password", "123456789", "12345678", "12345", "qwerty",
     "111111", "123123", "abc123", "senha", "iloveyou", "admin", "welcome",
@@ -24,18 +24,18 @@ _COMMON = {
     "football", "000000", "picture1", "123321", "654321", "superman",
 }
 
-# Padrões de teclado sequenciais frequentes.
+
 _SEQUENCES = [
     "qwertyuiop", "asdfghjkl", "zxcvbnm", "1234567890",
     "abcdefghijklmnopqrstuvwxyz",
 ]
 
-# Velocidades de ataque (tentativas por segundo) para cenários distintos.
+
 GUESSES_PER_SEC = {
-    "online_throttled": 100,           # 100/s (rate limit)
-    "online_unthrottled": 10_000,      # 10 mil/s
-    "offline_slow_hash": 10_000,       # bcrypt/scrypt
-    "offline_fast_hash": 10_000_000_000,  # MD5/SHA1 em GPU
+    "online_throttled": 100,
+    "online_unthrottled": 10_000,
+    "offline_slow_hash": 10_000,
+    "offline_fast_hash": 10_000_000_000,
 }
 
 
@@ -49,7 +49,7 @@ class AuditResult:
     is_common: bool
     has_sequence: bool
     reused_with: list[str] = field(default_factory=list)
-    score: int = 0            # 0-4
+    score: int = 0
     verdict: str = ""
     suggestions: list[str] = field(default_factory=list)
 
@@ -87,7 +87,7 @@ def _has_sequence(password: str) -> bool:
             chunk = seq[i:i + 3]
             if chunk in low or chunk[::-1] in low:
                 return True
-    # repetição do mesmo caractere 3x
+
     if re.search(r"(.)\1\1", password):
         return True
     return False
@@ -114,7 +114,7 @@ def _human_time(seconds: float) -> str:
 
 
 def _crack_times(entropy_bits: float) -> dict[str, str]:
-    # Em média metade do espaço é percorrido: 2^(bits-1) tentativas.
+
     guesses = 2 ** max(entropy_bits - 1, 0)
     out = {}
     for scenario, rate in GUESSES_PER_SEC.items():
@@ -166,12 +166,12 @@ def audit_password(password: str, others: Iterable[str] | None = None) -> AuditR
     """Audita uma senha e retorna um AuditResult completo."""
     others = list(others or [])
     charset = _charset_size(password)
-    # Usa a menor das duas medidas de entropia (mais conservador).
+
     entropy = min(search_space_entropy(password), shannon_entropy(password) + 2 * len(password))
     is_common = password.lower() in _COMMON
     has_seq = _has_sequence(password)
 
-    # Detecta reuso por hash: mesma senha aparecendo no conjunto informado.
+
     reused: list[str] = []
     ph = hashlib.sha256(password.encode()).hexdigest()
     for idx, o in enumerate(others):
